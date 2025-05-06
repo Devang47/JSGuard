@@ -27,7 +27,7 @@ app.post("/analyze", (req, res) => {
     }
 
     // Analyze the code
-    const issues: CodeIssue[] = analyzeCode(code);
+    const issues = analyzeCode(code);
 
     // Return the results
     res.status(200).json({ issues });
