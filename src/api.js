@@ -1,6 +1,5 @@
 import express from "express";
 import { analyzeCode } from "./main.js";
-import { CodeIssue } from "./types.js";
 
 // Create Express app
 const app = express();
