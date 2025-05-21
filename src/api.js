@@ -15,6 +15,7 @@ app.get("/health", (_, res) => {
 
 // Main analyze endpoint
 app.post("/analyze", (req, res) => {
+  console.log("requests");
   try {
     // Get code from request body
     const { code } = req.body;

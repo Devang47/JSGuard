@@ -1,7 +1,7 @@
 import * as parser from "@babel/parser";
 import { ParseResult, ParserOptions } from "@babel/parser";
 import * as t from "@babel/types";
-import { CodeIssue } from "./types.js"; // Added import
+import { CodeIssue } from "./types.js";
 
 import _traverse from "@babel/traverse";
 const traverse = _traverse.default;
