@@ -1,5 +1,5 @@
 /**
- * Token types enumeration
+ * Minimal Token types for essential JavaScript constructs
  */
 export const TokenType = {
   // Literals
@@ -8,7 +8,6 @@ export const TokenType = {
   STRING: 'STRING',
   BOOLEAN: 'BOOLEAN',
   NULL: 'NULL',
-  UNDEFINED: 'UNDEFINED',
 
   // Keywords
   KEYWORD: 'KEYWORD',
@@ -18,13 +17,11 @@ export const TokenType = {
   ARITHMETIC: 'ARITHMETIC',
   COMPARISON: 'COMPARISON',
   LOGICAL: 'LOGICAL',
-  UNARY: 'UNARY',
   
   // Punctuation
   SEMICOLON: 'SEMICOLON',
   COMMA: 'COMMA',
   DOT: 'DOT',
-  COLON: 'COLON',
   
   // Brackets
   LPAREN: 'LPAREN',
@@ -35,22 +32,15 @@ export const TokenType = {
   RBRACKET: 'RBRACKET',
   
   // Special
-  NEWLINE: 'NEWLINE',
-  WHITESPACE: 'WHITESPACE',
-  COMMENT: 'COMMENT',
   EOF: 'EOF',
   UNKNOWN: 'UNKNOWN'
 };
 
 /**
- * JavaScript keywords
+ * Essential JavaScript keywords for static analysis
  */
 const KEYWORDS = new Set([
-  'break', 'case', 'catch', 'class', 'const', 'continue', 'debugger',
-  'default', 'delete', 'do', 'else', 'export', 'extends', 'finally',
-  'for', 'function', 'if', 'import', 'in', 'instanceof', 'let', 'new',
-  'return', 'super', 'switch', 'this', 'throw', 'try', 'typeof', 'var',
-  'void', 'while', 'with', 'yield', 'async', 'await', 'of'
+  'var', 'let', 'const', 'function', 'return', 'if', 'else', 'for', 'while'
 ]);
 
 /**
@@ -70,7 +60,7 @@ export class Token {
 }
 
 /**
- * JavaScript Lexer class
+ * Minimal JavaScript Lexer - handles only essential constructs
  */
 export class JavaScriptLexer {
   constructor(input) {
@@ -78,12 +68,8 @@ export class JavaScriptLexer {
     this.position = 0;
     this.line = 1;
     this.column = 1;
-    this.tokens = [];
   }
 
-  /**
-   * Get current character
-   */
   currentChar() {
     if (this.position >= this.input.length) {
       return null;
@@ -91,20 +77,14 @@ export class JavaScriptLexer {
     return this.input[this.position];
   }
 
-  /**
-   * Peek at next character without advancing position
-   */
-  peekChar(offset = 1) {
-    const pos = this.position + offset;
+  peekChar() {
+    const pos = this.position + 1;
     if (pos >= this.input.length) {
       return null;
     }
     return this.input[pos];
   }
 
-  /**
-   * Advance position and update line/column tracking
-   */
   advance() {
     if (this.position < this.input.length) {
       if (this.input[this.position] === '\n') {
@@ -117,17 +97,14 @@ export class JavaScriptLexer {
     }
   }
 
-  /**
-   * Skip whitespace characters
-   */
   skipWhitespace() {
-    while (this.currentChar() && /\s/.test(this.currentChar()) && this.currentChar() !== '\n') {
+    while (this.currentChar() && /\s/.test(this.currentChar())) {
       this.advance();
     }
   }
 
   /**
-   * Read identifier or keyword
+   * Read identifier or keyword - simplified
    */
   readIdentifier() {
     const startLine = this.line;
@@ -139,8 +116,6 @@ export class JavaScriptLexer {
       this.advance();
     }
 
-    const type = KEYWORDS.has(value) ? TokenType.KEYWORD : TokenType.IDENTIFIER;
-    
     // Handle special literals
     if (value === 'true' || value === 'false') {
       return new Token(TokenType.BOOLEAN, value, startLine, startColumn);
@@ -148,15 +123,14 @@ export class JavaScriptLexer {
     if (value === 'null') {
       return new Token(TokenType.NULL, value, startLine, startColumn);
     }
-    if (value === 'undefined') {
-      return new Token(TokenType.UNDEFINED, value, startLine, startColumn);
-    }
 
+    // Check if it's a keyword
+    const type = KEYWORDS.has(value) ? TokenType.KEYWORD : TokenType.IDENTIFIER;
     return new Token(type, value, startLine, startColumn);
   }
 
   /**
-   * Read numeric literal
+   * Read numeric literal - simplified
    */
   readNumber() {
     const startLine = this.line;
@@ -166,32 +140,18 @@ export class JavaScriptLexer {
 
     while (this.currentChar() && (/\d/.test(this.currentChar()) || this.currentChar() === '.')) {
       if (this.currentChar() === '.') {
-        if (hasDecimal) break; // Second decimal point, stop
+        if (hasDecimal) break;
         hasDecimal = true;
       }
       value += this.currentChar();
       this.advance();
     }
 
-    // Handle scientific notation
-    if (this.currentChar() && (this.currentChar() === 'e' || this.currentChar() === 'E')) {
-      value += this.currentChar();
-      this.advance();
-      if (this.currentChar() && (this.currentChar() === '+' || this.currentChar() === '-')) {
-        value += this.currentChar();
-        this.advance();
-      }
-      while (this.currentChar() && /\d/.test(this.currentChar())) {
-        value += this.currentChar();
-        this.advance();
-      }
-    }
-
     return new Token(TokenType.NUMBER, value, startLine, startColumn);
   }
 
   /**
-   * Read string literal
+   * Read string literal - simplified
    */
   readString(quote) {
     const startLine = this.line;
@@ -204,7 +164,7 @@ export class JavaScriptLexer {
       if (this.currentChar() === '\\') {
         this.advance(); // Skip backslash
         if (this.currentChar()) {
-          value += '\\' + this.currentChar();
+          value += this.currentChar(); // Don't store escape sequence
           this.advance();
         }
       } else {
@@ -221,83 +181,26 @@ export class JavaScriptLexer {
   }
 
   /**
-   * Read single-line comment
-   */
-  readSingleLineComment() {
-    const startLine = this.line;
-    const startColumn = this.column;
-    let value = '';
-
-    // Skip '//'
-    this.advance();
-    this.advance();
-
-    while (this.currentChar() && this.currentChar() !== '\n') {
-      value += this.currentChar();
-      this.advance();
-    }
-
-    return new Token(TokenType.COMMENT, value.trim(), startLine, startColumn);
-  }
-
-  /**
-   * Read multi-line comment
-   */
-  readMultiLineComment() {
-    const startLine = this.line;
-    const startColumn = this.column;
-    let value = '';
-
-    // Skip '/*'
-    this.advance();
-    this.advance();
-
-    while (this.currentChar()) {
-      if (this.currentChar() === '*' && this.peekChar() === '/') {
-        this.advance(); // Skip '*'
-        this.advance(); // Skip '/'
-        break;
-      }
-      value += this.currentChar();
-      this.advance();
-    }
-
-    return new Token(TokenType.COMMENT, value.trim(), startLine, startColumn);
-  }
-
-  /**
-   * Read operator
+   * Read operator - simplified
    */
   readOperator() {
     const startLine = this.line;
     const startColumn = this.column;
     const char = this.currentChar();
     const nextChar = this.peekChar();
-
-    // Two-character operators
     const twoChar = char + (nextChar || '');
-    const threeChar = twoChar + (this.peekChar(2) || '');
-
-    // Three-character operators
-    if (['===', '!==', '>>>', '<<=', '>>='].includes(threeChar)) {
-      this.advance();
-      this.advance();
-      this.advance();
-      return new Token(TokenType.COMPARISON, threeChar, startLine, startColumn);
-    }
 
     // Two-character operators
     const twoCharOps = {
-      '==': TokenType.COMPARISON, '!=': TokenType.COMPARISON,
-      '<=': TokenType.COMPARISON, '>=': TokenType.COMPARISON,
-      '&&': TokenType.LOGICAL, '||': TokenType.LOGICAL,
-      '++': TokenType.UNARY, '--': TokenType.UNARY,
-      '+=': TokenType.ASSIGNMENT, '-=': TokenType.ASSIGNMENT,
-      '*=': TokenType.ASSIGNMENT, '/=': TokenType.ASSIGNMENT,
-      '%=': TokenType.ASSIGNMENT, '&=': TokenType.ASSIGNMENT,
-      '|=': TokenType.ASSIGNMENT, '^=': TokenType.ASSIGNMENT,
-      '<<': TokenType.ARITHMETIC, '>>': TokenType.ARITHMETIC,
-      '**': TokenType.ARITHMETIC
+      '==': TokenType.COMPARISON,
+      '!=': TokenType.COMPARISON,
+      '<=': TokenType.COMPARISON,
+      '>=': TokenType.COMPARISON,
+      '===': TokenType.COMPARISON,
+      '!==': TokenType.COMPARISON,
+      '&&': TokenType.LOGICAL,
+      '||': TokenType.LOGICAL,
+      '+=': TokenType.ASSIGNMENT
     };
 
     if (twoCharOps[twoChar]) {
@@ -306,15 +209,27 @@ export class JavaScriptLexer {
       return new Token(twoCharOps[twoChar], twoChar, startLine, startColumn);
     }
 
+    // Three-character operators (===, !==)
+    if (twoChar === '==' || twoChar === '!=') {
+      const thirdChar = this.peekChar();
+      if (thirdChar === '=') {
+        this.advance();
+        this.advance();
+        this.advance();
+        return new Token(TokenType.COMPARISON, char + nextChar + thirdChar, startLine, startColumn);
+      }
+    }
+
     // Single-character operators
     const singleCharOps = {
-      '+': TokenType.ARITHMETIC, '-': TokenType.ARITHMETIC,
-      '*': TokenType.ARITHMETIC, '/': TokenType.ARITHMETIC,
-      '%': TokenType.ARITHMETIC, '=': TokenType.ASSIGNMENT,
-      '<': TokenType.COMPARISON, '>': TokenType.COMPARISON,
-      '!': TokenType.UNARY, '~': TokenType.UNARY,
-      '&': TokenType.ARITHMETIC, '|': TokenType.ARITHMETIC,
-      '^': TokenType.ARITHMETIC
+      '+': TokenType.ARITHMETIC,
+      '-': TokenType.ARITHMETIC,
+      '*': TokenType.ARITHMETIC,
+      '/': TokenType.ARITHMETIC,
+      '%': TokenType.ARITHMETIC,
+      '=': TokenType.ASSIGNMENT,
+      '<': TokenType.COMPARISON,
+      '>': TokenType.COMPARISON
     };
 
     if (singleCharOps[char]) {
@@ -322,13 +237,13 @@ export class JavaScriptLexer {
       return new Token(singleCharOps[char], char, startLine, startColumn);
     }
 
-    // If not recognized as operator, return as unknown
+    // Unknown operator
     this.advance();
     return new Token(TokenType.UNKNOWN, char, startLine, startColumn);
   }
 
   /**
-   * Get next token
+   * Get next token - simplified
    */
   nextToken() {
     while (this.currentChar()) {
@@ -336,24 +251,34 @@ export class JavaScriptLexer {
       const line = this.line;
       const column = this.column;
 
-      // Skip whitespace (except newlines)
-      if (/[ \t\r]/.test(char)) {
+      // Skip whitespace
+      if (/\s/.test(char)) {
         this.skipWhitespace();
         continue;
       }
 
-      // Newline
-      if (char === '\n') {
-        this.advance();
-        return new Token(TokenType.NEWLINE, '\\n', line, column);
+      // Skip comments
+      if (char === '/' && this.peekChar() === '/') {
+        // Skip single-line comment
+        while (this.currentChar() && this.currentChar() !== '\n') {
+          this.advance();
+        }
+        continue;
       }
 
-      // Comments
-      if (char === '/' && this.peekChar() === '/') {
-        return this.readSingleLineComment();
-      }
       if (char === '/' && this.peekChar() === '*') {
-        return this.readMultiLineComment();
+        // Skip multi-line comment
+        this.advance(); // Skip '/'
+        this.advance(); // Skip '*'
+        while (this.currentChar()) {
+          if (this.currentChar() === '*' && this.peekChar() === '/') {
+            this.advance(); // Skip '*'
+            this.advance(); // Skip '/'
+            break;
+          }
+          this.advance();
+        }
+        continue;
       }
 
       // String literals
@@ -376,7 +301,6 @@ export class JavaScriptLexer {
         ';': TokenType.SEMICOLON,
         ',': TokenType.COMMA,
         '.': TokenType.DOT,
-        ':': TokenType.COLON,
         '(': TokenType.LPAREN,
         ')': TokenType.RPAREN,
         '{': TokenType.LBRACE,
@@ -391,11 +315,11 @@ export class JavaScriptLexer {
       }
 
       // Operators
-      if (/[+\-*/%=<>!&|^~]/.test(char)) {
+      if (/[+\-*/%=<>!&|]/.test(char)) {
         return this.readOperator();
       }
 
-      // Unknown character
+      // Unknown character - skip it
       this.advance();
       return new Token(TokenType.UNKNOWN, char, line, column);
     }
@@ -412,29 +336,19 @@ export class JavaScriptLexer {
 
     do {
       token = this.nextToken();
-      tokens.push(token);
+      if (token.type !== TokenType.UNKNOWN) { // Skip unknown tokens
+        tokens.push(token);
+      }
     } while (token.type !== TokenType.EOF);
 
     return tokens;
-  }
-
-  /**
-   * Get all tokens (excluding whitespace and comments by default)
-   */
-  getTokens(includeWhitespace = false, includeComments = false) {
-    const tokens = this.tokenize();
-    return tokens.filter(token => {
-      if (!includeWhitespace && token.type === TokenType.WHITESPACE) return false;
-      if (!includeComments && token.type === TokenType.COMMENT) return false;
-      return true;
-    });
   }
 }
 
 /**
  * Convenience function to tokenize JavaScript code
  */
-export function tokenizeJavaScript(code, options = {}) {
+export function tokenizeJavaScript(code) {
   const lexer = new JavaScriptLexer(code);
-  return lexer.getTokens(options.includeWhitespace, options.includeComments);
+  return lexer.tokenize();
 }
