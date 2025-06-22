@@ -33,7 +33,6 @@ program
 
       // Format the issues
       const formattedIssues = formatIssues(issues);
-
       // Output results
       if (options.output) {
         const outputPath = path.resolve(process.cwd(), options.output);
@@ -48,7 +47,7 @@ program
         const issuesByType = issues.reduce((acc, issue) => {
           acc[issue.type] = (acc[issue.type] || 0) + 1;
           return acc;
-        }, {} as Record<string, number>);
+        }, {}); // Removed Record<string, number>
 
         console.log("\nSummary:");
         console.log(`Total issues: ${issues.length}`);

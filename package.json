@@ -2,17 +2,16 @@
   "name": "jsguard",
   "version": "1.0.0",
   "description": "JavaScript static code analyzer to detect potential issues",
-  "main": "dist/main.js",
+  "main": "src/main.js",
   "type": "module",
   "bin": {
-    "jsguard": "dist/cli.js"
+    "jsguard": "src/cli.js"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "nodemon --exec \"node --loader ts-node/esm\" src/cli.ts",
-    "build": "tsc -p tsconfig.json",
-    "dev:api": "nodemon --exec \"node --loader ts-node/esm\" src/api.ts",
-    "start": "node ./dist/api.js"
+    "dev": "nodemon src/cli.js",
+    "build": "# tsc -p tsconfig.json # No longer needed as project is JS",
+    "start": "node ./src/api.js"
   },
   "author": "",
   "license": "MIT",
@@ -22,13 +21,7 @@
     "@babel/types": "^7.27.1",
     "commander": "^10.0.1",
     "nodemon": "^3.1.9",
-    "ts-node": "^10.9.1",
-    "tslib": "^2.8.1",
-    "typescript": "^5.3.0",
     "express": "5.1.0"
   },
-  "devDependencies": {
-    "@types/node": "^20.0.0",
-    "@types/express": "5.0.1"
-  }
+  "devDependencies": {}
 }

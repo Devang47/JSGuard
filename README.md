@@ -34,6 +34,8 @@ JSGuard identifies a variety of issues in JavaScript code:
   - Warns against the use of `var` and recommends `let` or `const` for better scoping.
 - **Complexity Warnings**
   - Flags functions with a high number of statements (currently >30 statements) as potentially too complex and needing refactoring.
+- **API Usage**
+  - Detects insecure API usage patterns (if specific rules are implemented).
 
 ## Installation
 
@@ -57,7 +59,6 @@ JSGuard identifies a variety of issues in JavaScript code:
 
 ```
 JSGuard/
-├── dist/                   # Compiled JavaScript output for the main application
 ├── frontend/               # React-based frontend application
 │   ├── public/
 │   ├── src/
@@ -67,10 +68,10 @@ JSGuard/
 │   ├── package.json
 │   └── vite.config.js
 ├── src/                    # Source code for the analyzer and API
-│   ├── api.ts              # Express API server
-│   ├── cli.ts              # Command-line interface logic
-│   ├── main.ts             # Core analysis logic
-│   └── types.ts            # TypeScript type definitions
+│   ├── api.js              # Express API server
+│   ├── cli.js              # Command-line interface logic
+│   ├── main.js             # Core analysis logic
+│   └── types.js            # JSDoc type definitions (formerly TypeScript types)
 ├── .gitignore
 ├── LICENSE
 ├── package.json
@@ -169,14 +170,16 @@ To run the JSGuard components in development mode with hot-reloading:
     pnpm run dev:api
     ```
 
-    This will start the API server using `nodemon` on `http://localhost:3000`.
+    This will start the API server using `nodemon` on `http://localhost:3000`, directly running `src/api.js`.
 
 2.  **CLI:**
-    To test CLI changes, you can run it directly with `ts-node`:
+    To test CLI changes, you can run it directly with `nodemon` (or `node` for a single run):
 
     ```bash
     pnpm run dev -- path/to/your/test.js
     ```
+
+    This executes `src/cli.js` via the `dev` script in `package.json`.
 
 3.  **Frontend:**
     Navigate to the `frontend` directory and run:

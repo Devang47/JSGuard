@@ -2,7 +2,7 @@ import { useState } from "react";
 import "./App.css";
 
 function App() {
-  const [code, setCode] = useState("// Paste your JavaScript code here");
+  const [code, setCode] = useState("// JavaScript code");
   const [results, setResults] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -96,9 +96,9 @@ function App() {
                             {getSeverityIcon(issue.severity)}
                           </div>
                           <div className="issue-content">
-                            <div className="issue-location">
+                            {/* <div className="issue-location">
                               Line {issue.line}:{issue.column}
-                            </div>
+                            </div> */}
                             <div className="issue-message">{issue.message}</div>
                             {issue.rule && (
                               <div className="issue-rule">
@@ -153,13 +153,6 @@ function App() {
       </header>
 
       <main className="app-main">
-        {/* <div className="description-card">
-          <p>
-            Detect security vulnerabilities, coding errors, and performance
-            issues in your JavaScript code
-          </p>
-        </div> */}
-
         <div className="code-panel">
           <div className="code-header">
             <h2>
