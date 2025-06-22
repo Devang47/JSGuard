@@ -1,7 +1,7 @@
 import { TokenType, JavaScriptLexer } from './lexer.js';
 
 /**
- * AST Node types
+ * Minimal AST Node types for essential JavaScript constructs
  */
 export const NodeType = {
   // Program
@@ -11,27 +11,18 @@ export const NodeType = {
   EXPRESSION_STATEMENT: 'ExpressionStatement',
   VARIABLE_DECLARATION: 'VariableDeclaration',
   FUNCTION_DECLARATION: 'FunctionDeclaration',
-  RETURN_STATEMENT: 'ReturnStatement',
-  IF_STATEMENT: 'IfStatement',
-  WHILE_STATEMENT: 'WhileStatement',
-  FOR_STATEMENT: 'ForStatement',
   BLOCK_STATEMENT: 'BlockStatement',
   
   // Expressions
   BINARY_EXPRESSION: 'BinaryExpression',
-  UNARY_EXPRESSION: 'UnaryExpression',
   ASSIGNMENT_EXPRESSION: 'AssignmentExpression',
   CALL_EXPRESSION: 'CallExpression',
   MEMBER_EXPRESSION: 'MemberExpression',
   IDENTIFIER: 'Identifier',
   LITERAL: 'Literal',
-  ARRAY_EXPRESSION: 'ArrayExpression',
-  OBJECT_EXPRESSION: 'ObjectExpression',
   
   // Other
-  VARIABLE_DECLARATOR: 'VariableDeclarator',
-  PROPERTY: 'Property',
-  PARAMETER: 'Parameter'
+  VARIABLE_DECLARATOR: 'VariableDeclarator'
 };
 
 /**
@@ -85,18 +76,6 @@ export class BinaryExpression extends ASTNode {
     this.operator = operator;
     this.left = left;
     this.right = right;
-  }
-}
-
-/**
- * Unary Expression node
- */
-export class UnaryExpression extends ASTNode {
-  constructor(operator, argument, prefix = true, line = 1, column = 1) {
-    super(NodeType.UNARY_EXPRESSION, line, column);
-    this.operator = operator;
-    this.argument = argument;
-    this.prefix = prefix;
   }
 }
 
@@ -190,61 +169,7 @@ export class ExpressionStatement extends ASTNode {
 }
 
 /**
- * Return Statement node
- */
-export class ReturnStatement extends ASTNode {
-  constructor(argument = null, line = 1, column = 1) {
-    super(NodeType.RETURN_STATEMENT, line, column);
-    this.argument = argument;
-  }
-}
-
-/**
- * If Statement node
- */
-export class IfStatement extends ASTNode {
-  constructor(test, consequent, alternate = null, line = 1, column = 1) {
-    super(NodeType.IF_STATEMENT, line, column);
-    this.test = test;
-    this.consequent = consequent;
-    this.alternate = alternate;
-  }
-}
-
-/**
- * Array Expression node
- */
-export class ArrayExpression extends ASTNode {
-  constructor(elements = [], line = 1, column = 1) {
-    super(NodeType.ARRAY_EXPRESSION, line, column);
-    this.elements = elements;
-  }
-}
-
-/**
- * Object Expression node
- */
-export class ObjectExpression extends ASTNode {
-  constructor(properties = [], line = 1, column = 1) {
-    super(NodeType.OBJECT_EXPRESSION, line, column);
-    this.properties = properties;
-  }
-}
-
-/**
- * Property node (for object literals)
- */
-export class Property extends ASTNode {
-  constructor(key, value, kind = 'init', line = 1, column = 1) {
-    super(NodeType.PROPERTY, line, column);
-    this.key = key;
-    this.value = value;
-    this.kind = kind;
-  }
-}
-
-/**
- * JavaScript Parser class
+ * Minimal JavaScript Parser - handles only essential constructs
  */
 export class JavaScriptParser {
   constructor(tokens) {
@@ -256,9 +181,6 @@ export class JavaScriptParser {
     this.errors = [];
   }
 
-  /**
-   * Get current token
-   */
   currentToken() {
     if (this.position >= this.tokens.length) {
       return { type: TokenType.EOF, value: '', line: 1, column: 1 };
@@ -266,49 +188,27 @@ export class JavaScriptParser {
     return this.tokens[this.position];
   }
 
-  /**
-   * Peek at next token
-   */
-  peekToken(offset = 1) {
-    const pos = this.position + offset;
-    if (pos >= this.tokens.length) {
-      return { type: TokenType.EOF, value: '', line: 1, column: 1 };
-    }
-    return this.tokens[pos];
-  }
-
-  /**
-   * Advance to next token
-   */
   advance() {
     if (this.position < this.tokens.length) {
       this.position++;
     }
   }
 
-  /**
-   * Check if current token matches expected type and value
-   */
   match(type, value = null) {
     const token = this.currentToken();
     return token.type === type && (value === null || token.value === value);
   }
 
-  /**
-   * Consume token if it matches, otherwise throw error
-   */
-  consume(type, value = null, errorMessage = null) {
+  consume(type, value = null) {
     if (this.match(type, value)) {
       const token = this.currentToken();
       this.advance();
       return token;
     }
     
-    const expected = value ? `${type}(${value})` : type;
-    const actual = this.currentToken();
-    const message = errorMessage || `Expected ${expected}, got ${actual.type}(${actual.value}) at line ${actual.line}:${actual.column}`;
-    this.errors.push(message);
-    throw new Error(message);
+    // Skip error recovery for minimal parser
+    this.advance();
+    return { type: TokenType.UNKNOWN, value: '', line: 1, column: 1 };
   }
 
   /**
@@ -318,14 +218,9 @@ export class JavaScriptParser {
     const body = [];
     
     while (!this.match(TokenType.EOF)) {
-      try {
-        const stmt = this.parseStatement();
-        if (stmt) {
-          body.push(stmt);
-        }
-      } catch (error) {
-        // Error recovery - skip to next statement
-        this.synchronize();
+      const stmt = this.parseStatement();
+      if (stmt) {
+        body.push(stmt);
       }
     }
     
@@ -333,61 +228,32 @@ export class JavaScriptParser {
   }
 
   /**
-   * Synchronize after error for error recovery
-   */
-  synchronize() {
-    this.advance();
-    
-    while (!this.match(TokenType.EOF)) {
-      if (this.match(TokenType.SEMICOLON)) {
-        this.advance();
-        return;
-      }
-      
-      const token = this.currentToken();
-      if (token.type === TokenType.KEYWORD && 
-          ['function', 'var', 'let', 'const', 'if', 'while', 'for', 'return'].includes(token.value)) {
-        return;
-      }
-      
-      this.advance();
-    }
-  }
-
-  /**
-   * Parse statement
+   * Parse statement - minimal set
    */
   parseStatement() {
     const token = this.currentToken();
     
-    if (token.type === TokenType.KEYWORD) {
-      switch (token.value) {
-        case 'var':
-        case 'let':
-        case 'const':
-          return this.parseVariableDeclaration();
-        case 'function':
-          return this.parseFunctionDeclaration();
-        case 'return':
-          return this.parseReturnStatement();
-        case 'if':
-          return this.parseIfStatement();
-        case 'while':
-          return this.parseWhileStatement();
-        case 'for':
-          return this.parseForStatement();
-      }
+    // Variable declarations
+    if (token.type === TokenType.KEYWORD && ['var', 'let', 'const'].includes(token.value)) {
+      return this.parseVariableDeclaration();
     }
     
+    // Function declarations
+    if (token.type === TokenType.KEYWORD && token.value === 'function') {
+      return this.parseFunctionDeclaration();
+    }
+    
+    // Block statements
     if (this.match(TokenType.LBRACE)) {
       return this.parseBlockStatement();
     }
     
+    // Everything else is an expression statement
     return this.parseExpressionStatement();
   }
 
   /**
-   * Parse variable declaration
+   * Parse variable declaration: var/let/const x = value;
    */
   parseVariableDeclaration() {
     const token = this.consume(TokenType.KEYWORD);
@@ -395,11 +261,7 @@ export class JavaScriptParser {
     const declarations = [];
     
     do {
-      const id = new Identifier(
-        this.consume(TokenType.IDENTIFIER).value,
-        this.currentToken().line,
-        this.currentToken().column
-      );
+      const id = new Identifier(this.consume(TokenType.IDENTIFIER).value, token.line, token.column);
       
       let init = null;
       if (this.match(TokenType.ASSIGNMENT, '=')) {
@@ -416,6 +278,7 @@ export class JavaScriptParser {
       }
     } while (true);
     
+    // Optional semicolon
     if (this.match(TokenType.SEMICOLON)) {
       this.advance();
     }
@@ -424,33 +287,24 @@ export class JavaScriptParser {
   }
 
   /**
-   * Parse function declaration
+   * Parse function declaration: function name() { }
    */
   parseFunctionDeclaration() {
     const token = this.consume(TokenType.KEYWORD, 'function');
-    const id = new Identifier(
-      this.consume(TokenType.IDENTIFIER).value,
-      this.currentToken().line,
-      this.currentToken().column
-    );
+    const id = new Identifier(this.consume(TokenType.IDENTIFIER).value, token.line, token.column);
     
     this.consume(TokenType.LPAREN);
     const params = [];
     
-    if (!this.match(TokenType.RPAREN)) {
-      do {
-        params.push(new Identifier(
-          this.consume(TokenType.IDENTIFIER).value,
-          this.currentToken().line,
-          this.currentToken().column
-        ));
-        
-        if (this.match(TokenType.COMMA)) {
-          this.advance();
-        } else {
-          break;
-        }
-      } while (true);
+    // Simple parameter parsing
+    while (!this.match(TokenType.RPAREN) && !this.match(TokenType.EOF)) {
+      if (this.match(TokenType.IDENTIFIER)) {
+        params.push(new Identifier(this.currentToken().value, this.currentToken().line, this.currentToken().column));
+        this.advance();
+      }
+      if (this.match(TokenType.COMMA)) {
+        this.advance();
+      }
     }
     
     this.consume(TokenType.RPAREN);
@@ -460,7 +314,7 @@ export class JavaScriptParser {
   }
 
   /**
-   * Parse block statement
+   * Parse block statement: { statements... }
    */
   parseBlockStatement() {
     const token = this.consume(TokenType.LBRACE);
@@ -478,76 +332,7 @@ export class JavaScriptParser {
   }
 
   /**
-   * Parse return statement
-   */
-  parseReturnStatement() {
-    const token = this.consume(TokenType.KEYWORD, 'return');
-    let argument = null;
-    
-    if (!this.match(TokenType.SEMICOLON) && !this.match(TokenType.EOF)) {
-      argument = this.parseExpression();
-    }
-    
-    if (this.match(TokenType.SEMICOLON)) {
-      this.advance();
-    }
-    
-    return new ReturnStatement(argument, token.line, token.column);
-  }
-
-  /**
-   * Parse if statement
-   */
-  parseIfStatement() {
-    const token = this.consume(TokenType.KEYWORD, 'if');
-    this.consume(TokenType.LPAREN);
-    const test = this.parseExpression();
-    this.consume(TokenType.RPAREN);
-    const consequent = this.parseStatement();
-    
-    let alternate = null;
-    if (this.match(TokenType.KEYWORD, 'else')) {
-      this.advance();
-      alternate = this.parseStatement();
-    }
-    
-    return new IfStatement(test, consequent, alternate, token.line, token.column);
-  }
-
-  /**
-   * Parse while statement
-   */
-  parseWhileStatement() {
-    const token = this.consume(TokenType.KEYWORD, 'while');
-    this.consume(TokenType.LPAREN);
-    const test = this.parseExpression();
-    this.consume(TokenType.RPAREN);
-    const body = this.parseStatement();
-    
-    return new IfStatement(test, body, null, token.line, token.column); // Reusing IfStatement structure
-  }
-
-  /**
-   * Parse for statement (simplified)
-   */
-  parseForStatement() {
-    const token = this.consume(TokenType.KEYWORD, 'for');
-    this.consume(TokenType.LPAREN);
-    
-    // Simplified - just consume tokens until closing paren
-    let parenCount = 1;
-    while (parenCount > 0 && !this.match(TokenType.EOF)) {
-      if (this.match(TokenType.LPAREN)) parenCount++;
-      if (this.match(TokenType.RPAREN)) parenCount--;
-      this.advance();
-    }
-    
-    const body = this.parseStatement();
-    return new ExpressionStatement(body, token.line, token.column);
-  }
-
-  /**
-   * Parse expression statement
+   * Parse expression statement: expression;
    */
   parseExpressionStatement() {
     const expr = this.parseExpression();
@@ -560,17 +345,17 @@ export class JavaScriptParser {
   }
 
   /**
-   * Parse expression
+   * Parse expression - simplified precedence
    */
   parseExpression() {
     return this.parseAssignmentExpression();
   }
 
   /**
-   * Parse assignment expression
+   * Parse assignment: left = right
    */
   parseAssignmentExpression() {
-    const left = this.parseLogicalOrExpression();
+    const left = this.parseBinaryExpression();
     
     if (this.currentToken().type === TokenType.ASSIGNMENT) {
       const operator = this.currentToken().value;
@@ -583,15 +368,18 @@ export class JavaScriptParser {
   }
 
   /**
-   * Parse logical OR expression
+   * Parse binary expressions - simplified (no precedence handling)
    */
-  parseLogicalOrExpression() {
-    let left = this.parseLogicalAndExpression();
+  parseBinaryExpression() {
+    let left = this.parsePostfixExpression();
     
-    while (this.match(TokenType.LOGICAL, '||')) {
+    // Simple left-to-right parsing for all binary operators
+    while (this.currentToken().type === TokenType.ARITHMETIC || 
+           this.currentToken().type === TokenType.COMPARISON ||
+           this.currentToken().type === TokenType.LOGICAL) {
       const operator = this.currentToken().value;
       this.advance();
-      const right = this.parseLogicalAndExpression();
+      const right = this.parsePostfixExpression();
       left = new BinaryExpression(operator, left, right, left.line, left.column);
     }
     
@@ -599,137 +387,36 @@ export class JavaScriptParser {
   }
 
   /**
-   * Parse logical AND expression
-   */
-  parseLogicalAndExpression() {
-    let left = this.parseEqualityExpression();
-    
-    while (this.match(TokenType.LOGICAL, '&&')) {
-      const operator = this.currentToken().value;
-      this.advance();
-      const right = this.parseEqualityExpression();
-      left = new BinaryExpression(operator, left, right, left.line, left.column);
-    }
-    
-    return left;
-  }
-
-  /**
-   * Parse equality expression
-   */
-  parseEqualityExpression() {
-    let left = this.parseRelationalExpression();
-    
-    while (this.currentToken().type === TokenType.COMPARISON && 
-           ['==', '!=', '===', '!=='].includes(this.currentToken().value)) {
-      const operator = this.currentToken().value;
-      this.advance();
-      const right = this.parseRelationalExpression();
-      left = new BinaryExpression(operator, left, right, left.line, left.column);
-    }
-    
-    return left;
-  }
-
-  /**
-   * Parse relational expression
-   */
-  parseRelationalExpression() {
-    let left = this.parseAdditiveExpression();
-    
-    while (this.currentToken().type === TokenType.COMPARISON && 
-           ['<', '>', '<=', '>='].includes(this.currentToken().value)) {
-      const operator = this.currentToken().value;
-      this.advance();
-      const right = this.parseAdditiveExpression();
-      left = new BinaryExpression(operator, left, right, left.line, left.column);
-    }
-    
-    return left;
-  }
-
-  /**
-   * Parse additive expression
-   */
-  parseAdditiveExpression() {
-    let left = this.parseMultiplicativeExpression();
-    
-    while (this.currentToken().type === TokenType.ARITHMETIC && 
-           ['+', '-'].includes(this.currentToken().value)) {
-      const operator = this.currentToken().value;
-      this.advance();
-      const right = this.parseMultiplicativeExpression();
-      left = new BinaryExpression(operator, left, right, left.line, left.column);
-    }
-    
-    return left;
-  }
-
-  /**
-   * Parse multiplicative expression
-   */
-  parseMultiplicativeExpression() {
-    let left = this.parseUnaryExpression();
-    
-    while (this.currentToken().type === TokenType.ARITHMETIC && 
-           ['*', '/', '%'].includes(this.currentToken().value)) {
-      const operator = this.currentToken().value;
-      this.advance();
-      const right = this.parseUnaryExpression();
-      left = new BinaryExpression(operator, left, right, left.line, left.column);
-    }
-    
-    return left;
-  }
-
-  /**
-   * Parse unary expression
-   */
-  parseUnaryExpression() {
-    if (this.currentToken().type === TokenType.UNARY) {
-      const operator = this.currentToken().value;
-      const token = this.currentToken();
-      this.advance();
-      const argument = this.parseUnaryExpression();
-      return new UnaryExpression(operator, argument, true, token.line, token.column);
-    }
-    
-    return this.parsePostfixExpression();
-  }
-
-  /**
-   * Parse postfix expression (member access, function calls)
+   * Parse postfix expressions: obj.prop, obj[prop], func()
    */
   parsePostfixExpression() {
     let left = this.parsePrimaryExpression();
     
     while (true) {
       if (this.match(TokenType.DOT)) {
+        // obj.property
         this.advance();
-        const property = new Identifier(
-          this.consume(TokenType.IDENTIFIER).value,
-          this.currentToken().line,
-          this.currentToken().column
-        );
-        left = new MemberExpression(left, property, false, left.line, left.column);
+        if (this.match(TokenType.IDENTIFIER)) {
+          const property = new Identifier(this.currentToken().value, this.currentToken().line, this.currentToken().column);
+          this.advance();
+          left = new MemberExpression(left, property, false, left.line, left.column);
+        }
       } else if (this.match(TokenType.LBRACKET)) {
+        // obj[expression]
         this.advance();
         const property = this.parseExpression();
         this.consume(TokenType.RBRACKET);
         left = new MemberExpression(left, property, true, left.line, left.column);
       } else if (this.match(TokenType.LPAREN)) {
+        // function(args)
         this.advance();
         const args = [];
         
-        if (!this.match(TokenType.RPAREN)) {
-          do {
-            args.push(this.parseExpression());
-            if (this.match(TokenType.COMMA)) {
-              this.advance();
-            } else {
-              break;
-            }
-          } while (true);
+        while (!this.match(TokenType.RPAREN) && !this.match(TokenType.EOF)) {
+          args.push(this.parseExpression());
+          if (this.match(TokenType.COMMA)) {
+            this.advance();
+          }
         }
         
         this.consume(TokenType.RPAREN);
@@ -743,7 +430,7 @@ export class JavaScriptParser {
   }
 
   /**
-   * Parse primary expression
+   * Parse primary expressions: identifiers, literals, parentheses
    */
   parsePrimaryExpression() {
     const token = this.currentToken();
@@ -776,76 +463,9 @@ export class JavaScriptParser {
       return expr;
     }
     
-    if (this.match(TokenType.LBRACKET)) {
-      return this.parseArrayExpression();
-    }
-    
-    if (this.match(TokenType.LBRACE)) {
-      return this.parseObjectExpression();
-    }
-    
-    throw new Error(`Unexpected token ${token.type}(${token.value}) at line ${token.line}:${token.column}`);
-  }
-
-  /**
-   * Parse array expression
-   */
-  parseArrayExpression() {
-    const token = this.consume(TokenType.LBRACKET);
-    const elements = [];
-    
-    if (!this.match(TokenType.RBRACKET)) {
-      do {
-        elements.push(this.parseExpression());
-        if (this.match(TokenType.COMMA)) {
-          this.advance();
-        } else {
-          break;
-        }
-      } while (true);
-    }
-    
-    this.consume(TokenType.RBRACKET);
-    return new ArrayExpression(elements, token.line, token.column);
-  }
-
-  /**
-   * Parse object expression
-   */
-  parseObjectExpression() {
-    const token = this.consume(TokenType.LBRACE);
-    const properties = [];
-    
-    if (!this.match(TokenType.RBRACE)) {
-      do {
-        let key;
-        if (this.match(TokenType.IDENTIFIER)) {
-          key = new Identifier(this.currentToken().value, this.currentToken().line, this.currentToken().column);
-          this.advance();
-        } else if (this.match(TokenType.STRING)) {
-          key = new Literal(this.currentToken().value, this.currentToken().value, this.currentToken().line, this.currentToken().column);
-          this.advance();
-        } else {
-          throw new Error(`Expected property name at line ${this.currentToken().line}:${this.currentToken().column}`);
-        }
-        
-        // Expect colon after property name
-        this.consume(TokenType.COLON);
-        
-        const value = this.parseExpression();
-        
-        properties.push(new Property(key, value, 'init', key.line, key.column));
-        
-        if (this.match(TokenType.COMMA)) {
-          this.advance();
-        } else {
-          break;
-        }
-      } while (true);
-    }
-    
-    this.consume(TokenType.RBRACE);
-    return new ObjectExpression(properties, token.line, token.column);
+    // Unknown token - create placeholder
+    this.advance();
+    return new Identifier('unknown', token.line, token.column);
   }
 }
 
@@ -858,3 +478,4 @@ export function parseJavaScript(code) {
   const parser = new JavaScriptParser(tokens);
   return parser.parse();
 }
+
