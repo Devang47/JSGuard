@@ -1,5 +1,6 @@
 import { useState } from "react";
 import "./App.css";
+import { tokenizeJavaScript } from "./lexer";
 
 function App() {
   const [code, setCode] = useState("// JavaScript code");
@@ -7,6 +8,8 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [darkMode, setDarkMode] = useState(true);
+  const [showTokens, setShowTokens] = useState(false);
+  const [tokens, setTokens] = useState([]);
 
   const analyzeCode = async () => {
     setLoading(true);
@@ -38,6 +41,31 @@ function App() {
     setCode("// Paste your JavaScript code here");
     setResults(null);
     setError(null);
+    setShowTokens(false);
+    setTokens([]);
+  };
+
+  const handleTokenize = () => {
+    try {
+      setTokens(tokenizeJavaScript(code));
+      setShowTokens(true);
+    } catch (e) {
+      setTokens([{ type: "error", value: e.message }]);
+      setShowTokens(true);
+    }
+  };
+
+  const handleFileUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      setCode(event.target.result);
+      setResults(null);
+      setShowTokens(false);
+      setTokens([]);
+    };
+    reader.readAsText(file);
   };
 
   const renderResults = () => {
@@ -96,9 +124,6 @@ function App() {
                             {getSeverityIcon(issue.severity)}
                           </div>
                           <div className="issue-content">
-                            {/* <div className="issue-location">
-                              Line {issue.line}:{issue.column}
-                            </div> */}
                             <div className="issue-message">{issue.message}</div>
                             {issue.rule && (
                               <div className="issue-rule">
@@ -152,8 +177,8 @@ function App() {
         </div>
       </header>
 
-      <main className="app-main">
-        <div className="code-panel">
+      <main className="app-main" style={{ maxWidth: 1200, margin: "0 auto" }}>
+        <div className="code-panel" style={{ width: "100%" }}>
           <div className="code-header">
             <h2>
               <span className="code-icon">📝</span> Source Code
@@ -169,6 +194,16 @@ function App() {
               >
                 <span className="button-icon">📋</span> Copy
               </button>
+              <input
+                type="file"
+                accept=".js"
+                style={{ display: "none" }}
+                id="file-upload"
+                onChange={handleFileUpload}
+              />
+              <label htmlFor="file-upload" className="action-button upload">
+                <span className="button-icon">📂</span> Upload
+              </label>
             </div>
           </div>
           <div className="editor-container">
@@ -179,9 +214,18 @@ function App() {
               spellCheck="false"
               rows="15"
               placeholder="Paste your JavaScript code here"
+              style={{ width: "100%" }}
             />
           </div>
-          <div className="code-submit">
+          <div className="code-submit" style={{ marginTop: "1rem" }}>
+            <button
+              className={`analyze-button tokenize-button`}
+              onClick={handleTokenize}
+              disabled={loading}
+              style={{ marginRight: "1rem" }}
+            >
+              <span className="button-icon">🔤</span> Tokenize
+            </button>
             <button
               className={`analyze-button ${loading ? "loading" : ""}`}
               onClick={analyzeCode}
@@ -198,36 +242,72 @@ function App() {
               )}
             </button>
           </div>
-        </div>
-
-        <div className="">
-          {loading && (
-            <div className="loading-overlay">
-              <div className="loading-spinner"></div>
-              <p>Analyzing your code...</p>
+          {showTokens && (
+            <div
+              className="tokens-output"
+              style={{
+                background: "#16161a",
+                borderRadius: "4px",
+                padding: "0.5rem",
+                marginTop: "1rem",
+                fontSize: "0.95rem",
+                color: "#eebbc3",
+                maxHeight: "350px",
+                overflowY: "auto",
+                whiteSpace: "pre-wrap",
+              }}
+            >
+              <h3 style={{ marginTop: 0 }}>
+                Tokens
+                <button
+                  onClick={() => setShowTokens(false)}
+                  style={{
+                    float: "right",
+                    background: "none",
+                    border: "none",
+                    color: "#eebbc3",
+                    fontSize: "1.2em",
+                    cursor: "pointer",
+                  }}
+                  title="Close"
+                >
+                  ✖
+                </button>
+              </h3>
+              <pre style={{ margin: 0 }}>
+                {tokens.length === 0
+                  ? "No tokens yet."
+                  : tokens
+                      .map((tok, i) =>
+                        typeof tok === "string"
+                          ? tok
+                          : JSON.stringify(tok, null, 2)
+                      )
+                      .join("\n")}
+              </pre>
             </div>
           )}
-
-          {error && (
-            <div className="error-card">
-              <div className="error-icon">❌</div>
-              <h3>Error Occurred</h3>
-              <p className="error-message">{error}</p>
-            </div>
-          )}
-
-          {!loading && !error && results && renderResults()}
         </div>
       </main>
 
-      {/* <footer className="app-footer">
-        <p>JSGuard - Advanced JavaScript Code Analysis Tool</p>
-        <div className="footer-links">
-          <a href="#docs">Documentation</a>
-          <a href="#about">About</a>
-          <a href="#github">GitHub</a>
-        </div>
-      </footer> */}
+      <div className="">
+        {loading && (
+          <div className="loading-overlay">
+            <div className="loading-spinner"></div>
+            <p>Analyzing your code...</p>
+          </div>
+        )}
+
+        {error && (
+          <div className="error-card">
+            <div className="error-icon">❌</div>
+            <h3>Error Occurred</h3>
+            <p className="error-message">{error}</p>
+          </div>
+        )}
+
+        {!loading && !error && results && renderResults()}
+      </div>
     </div>
   );
 }

@@ -51,6 +51,9 @@ body {
   max-width: 1400px; /* Increased from 1200px */
   margin: 0 auto;
   width: 100%;
+  display: flex;
+  gap: 2rem;
+  align-items: flex-start;
 }
 
 /* Header */
@@ -127,6 +130,11 @@ body {
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
   overflow: hidden;
   margin-bottom: 2rem;
+  flex: 1;
+  min-width: 0;
+  background: #232946;
+  border-radius: 8px;
+  padding: 1rem;
 }
 
 .dark-mode .code-panel {
@@ -201,6 +209,16 @@ body {
 }
 
 .action-button:hover {
+  background-color: rgba(255, 255, 255, 0.3);
+}
+
+.action-button.upload {
+  background-color: rgba(255, 255, 255, 0.2);
+  color: white;
+  cursor: pointer;
+}
+
+.action-button.upload:hover {
   background-color: rgba(255, 255, 255, 0.3);
 }
 
@@ -497,6 +515,50 @@ body {
 .footer-links a:hover {
   color: white;
   text-decoration: underline;
+}
+
+/* Lexer Panel */
+.lexer-panel {
+  margin-top: 2rem;
+  background: #232946;
+  border-radius: 8px;
+  padding: 1rem;
+  color: #ffffff;
+}
+
+.tokens-output {
+  background: #16161a;
+  border-radius: 4px;
+  padding: 0.5rem;
+  margin-top: 1rem;
+  font-size: 0.95rem;
+  color: #eebbc3;
+  max-height: 350px;      /* Set a max height */
+  overflow-y: auto;       /* Enable vertical scroll */
+  white-space: pre-wrap;  /* Keep formatting */
+}
+
+/* Tokenize Button */
+.tokenize-button {
+  background: #ffb703;
+  color: #232946;
+  border: none;
+  border-radius: 6px;
+  padding: 0.7rem 2.2rem;
+  font-size: 1.15rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+  margin-right: 1rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.tokenize-button:hover,
+.tokenize-button:focus {
+  background: #ffd166;
+  color: #232946;
 }
 
 /* Responsive adjustments */

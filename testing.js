@@ -1,3 +1,4 @@
+
 // Test file for JSGuard static code analyzer
 
 // Security issues
